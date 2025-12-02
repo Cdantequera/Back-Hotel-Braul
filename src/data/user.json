@@ -1,0 +1,31 @@
+[
+  {
+    "id": "2c78e004-b27a-4459-ac7c-6a542e96f295",
+    "email": "test@ejemplo.com",
+    "password": 123456,
+    "role": "users"
+  },
+  {
+    "id": "4997da3d-31ec-4ecb-95e5-55f412c15a93",
+    "email": "daniel@prueba1.com",
+    "password": 123456123,
+    "role": "users"
+  },
+  {
+    "id": "537cae6a-37dd-4f56-b430-d404d0f01180",
+    "email": "daniel@prueba2.com",
+    "password": 456123
+  },
+  {
+    "id": "c8f9f211-f5fe-40e4-a990-21dec70faafb",
+    "email": "admin@hotel.com",
+    "password": 456123,
+    "role": "galactic-admin"
+  },
+  {
+    "id": "a9dfcd95-8e21-4d4d-b311-0a7de9da796a",
+    "email": "usuarioNew@new.com",
+    "password": 456123,
+    "role": "user"
+  }
+]

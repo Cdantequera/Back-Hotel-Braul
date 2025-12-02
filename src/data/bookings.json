@@ -1,0 +1,11 @@
+[
+  {
+    "id": "488c58b1-fdfe-4402-bcf4-fbcc88e98766",
+    "userId": "4997da3d-31ec-4ecb-95e5-55f412c15a93",
+    "roomId": "912d06c8-1e85-4f60-b18a-57b931f16bb7",
+    "checkIn": "2025-12-01",
+    "checkOut": "2025-12-05",
+    "totalPrice": 56000,
+    "status": "confirmed"
+  }
+]
