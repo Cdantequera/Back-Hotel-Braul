@@ -11,7 +11,7 @@
     "number": "102",
     "type": "Suite Matrimonial",
     "price": 12000,
-    "available": true
+    "available": false
   },
   {
     "id": "912d06c8-1e85-4f60-b18a-57b931f16bb7",

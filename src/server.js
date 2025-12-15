@@ -1,30 +1,36 @@
+// src/server.js
 const express = require("express");
-require("dotenv").config();
 const morgan = require("morgan");
 const cors = require("cors");
+require("dotenv").config();
 
-// --- IMPORTAMOS LAS RUTAS 
+// --- IMPORTACIONES DE RUTAS ---
+const connectDB = require("./config/database");
 const authRoutes = require("./routes/auth.routes");
-const roomRoutes = require("./routes/rooms.routes");
-const userRoutes = require("./routes/user.routes");
-const bookingRoutes = require("./routes/bookings.routes");
+const userRoutes = require("./routes/user.routes"); // <--- Importamos rutas de usuario
 
 const app = express();
 
-// MIDDLEWARES
+// --- CONEXIÓN A BASE DE DATOS ---
+connectDB();
+
+// --- MIDDLEWARES ---
 app.use(morgan("dev"));
-app.use(express.json());
 app.use(cors());
+app.use(express.json());
 
-// --- ENDPOINTS / RUTAS 
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/rooms", roomRoutes);
-app.use("/api/v1/bookings", bookingRoutes);
-app.use("/api/v1/users", userRoutes);
+// --- RUTAS (ENDPOINTS) ---
+// Aquí es donde definimos la "puerta de entrada"
+// Agregamos "/v1" para que coincida con lo que buscas en Postman
 
-// PUERTO
-const port = process.env.PORT || 4000; 
+app.use("/api/v1/auth", authRoutes);   // Quedará: http://localhost:4000/api/v1/auth/login
+app.use("/api/v1/users", userRoutes);  // Quedará: http://localhost:4000/api/v1/users
+
+// --- ARRANQUE DEL SERVIDOR ---
+const port = process.env.PORT || 4000;
 
 app.listen(port, () => {
-    console.log(`Servidor del Hotel corriendo en http://localhost:${port}`);
+    console.log(`🏨 Servidor corriendo en http://localhost:${port}`);
+    console.log(`   - Auth:  http://localhost:${port}/api/v1/auth`);
+    console.log(`   - Users: http://localhost:${port}/api/v1/users`);
 });

@@ -1,189 +1,124 @@
-const fs = require("fs");
-const path = require("path");
-const crypto = require("crypto");
+const User = require("../models/User");
 
-const filePath = path.resolve(__dirname, "../data/user.json");
-
-function readData() {
-  try {
-    const data = fs.readFileSync(filePath, "utf8");
-    return JSON.parse(data);
-  } catch (error) {
-    return [];
-  }
-}
-
-function writeData(data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2));
-}
-
-
-
-const getUserById = (req, res) => {
+// 1. Obtener todos los usuarios (Para el panel de Admin)
+const getAllUsers = async (req, res) => {
     try {
-    const {id} = req.params; //capturamos el id que viaja en el parametro de la ruta 
-    const users = readData();
-    const exist = users.find((u) => u.id === id);
-
-    if (!exist) {
-    return res.status(404).json({
-        ok: false,
-        msj: "El usuario no existe"
-    });
-    }
-
-    return res.status(200).json({
-        ok: true,
-        msj: "Usuario obtenido exitosamente",
-        user: {
-            id: exist.id,
-            email: exist.email
-        }
-    });
-
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-      ok: false,
-      msj: "Error al obtener el usuario"
-    });
-  }
-};
-
-const createUser = (req, res) => {
-    try {
-    const { email, password, role } = req.body;
-
-    if (!email || !password) {
-        return res.status(400).json({ ok: false, msj: "Faltan datos obligatorios" });
-    }
-
-    const users = readData();
-    if (users.find((u) => u.email === email)) {
-        return res.status(409).json({ ok: false, msj: "El email ya existe" });
-    }
-
-    const newUser = {
-        id: crypto.randomUUID(),
-        email,
-        password,
-        role: role || "user" // Si no mandan rol, por defecto es user
-    };
-
-    users.push(newUser);
-    writeData(users);
-
-    return res.status(201).json({ ok: true, msj: "Usuario creado", user: newUser });
-    } catch (error) {
-    return res.status(500).json({ ok: false, msj: "Error al crear usuario" });
-    }
-};
-
-const updateUser = (req, res) => {
-    try {
-    const { id } = req.params;
-    const users = readData(); // 1. Leemos
-
-    const userIndex = users.findIndex((u) => u.id === id);
-
-    if (userIndex === -1) {
-        return res.status(404).json({ ok: false, msj: "Usuario no encontrado" });
-    }
-
-    // 2. Modificamos el usuario en memoria
-    users[userIndex] = {
-        ...users[userIndex],
-        ...req.body, 
-        id: id // Protegemos el ID para que no cambie
-    };
-
-    //Guardamos en el archivo
-    writeData(users);
-
-    return res.status(200).json({ 
-        ok: true, 
-        msj: "Usuario actualizado", 
-        user: users[userIndex] 
-    });
-
-    } catch (error) {
-        return res.status(500).json({ ok: false, msj: "Error al actualizar" });
-    }
-};
-
-const getAllUsers = (req, res) => {
-    try {
-    const users = readData();
-    if (users.length === 0){
-        return res.status(404).json({
-            ok: false,
-            msj: "No se encontraron usuarios"
-        });
-    }
-    return res.status(200).json({
-        ok: true,
-        msj: "Lista de usuarios obtenida exitosamente",
-        data:{
-            length: users.length,
+        // Buscamos todos y ocultamos la contraseña por seguridad
+        const users = await User.find().select("-password");
+        
+        return res.status(200).json({
+            ok: true,
+            count: users.length,
             users
-        },
-    
-    });
+        });
     } catch (error) {
-        console.log(error);
+        console.error(error);
         return res.status(500).json({
             ok: false,
-            msj: "Error al obtener los usuarios"
+            message: "Error al obtener usuarios"
         });
     }
-}
+};
 
-const deleteUser = (req, res) => {
+// 2. Obtener un solo usuario por ID
+const getUserById = async (req, res) => {
     try {
-    const {id} = req.params; //capturamos el id que viaja en el parametro de la ruta 
-    const users = readData();
-    const exist = users.find((u) => u.id === id);
+        const { id } = req.params;
+        const user = await User.findById(id).select("-password");
 
-
-    if (!exist) {
-    return res.status(404).json({
-        ok: false,
-        message: "El usuario no existe"
-    });
-    }
-
-    const filteredUsers = users.filter((u) => u.id !== id);
-    
-    writeData(filteredUsers);
-
-
-    return res.status(200).json({
-        ok: true,
-        message: "Usuario eliminado exitosamente",
-        deletedUser: {
-            id: exist.id,
-            email: exist.email
+        if (!user) {
+            return res.status(404).json({
+                ok: false,
+                message: "Usuario no encontrado"
+            });
         }
-    });
 
+        return res.status(200).json({
+            ok: true,
+            user
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            ok: false,
+            message: "Error al buscar el usuario"
+        });
+    }
+};
+
+// 3. Cambiar el Rol de un usuario (Ej: de 'guest' a 'receptionist')
+const changeUserRole = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { role } = req.body; // El nuevo rol viene en el body
+
+        // Validamos que el rol sea uno de los permitidos (doble seguridad)
+        if (!["huesped", "admin", "recepcionista"].includes(role)) {
+            return res.status(400).json({
+                ok: false,
+                message: "Rol no válido"
+            });
+        }
+
+        const updatedUser = await User.findByIdAndUpdate(
+            id, 
+            { role }, 
+            { new: true } // Esto hace que nos devuelva el usuario YA actualizado
+        ).select("-password");
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                ok: false,
+                message: "Usuario no encontrado para actualizar"
+            });
+        }
+
+        return res.status(200).json({
+            ok: true,
+            message: `Rol actualizado a ${role}`,
+            user: updatedUser
+        });
 
     } catch (error) {
-    console.log(error);
-    return res.status(500).json({
-        ok: false,
-        msj: "Error al eliminar el usuario"
-    });
+        console.error(error);
+        return res.status(500).json({
+            ok: false,
+            message: "Error al actualizar el rol"
+        });
+    }
+};
+
+// 4. Eliminar usuario
+const deleteUser = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        const deletedUser = await User.findByIdAndDelete(id);
+
+        if (!deletedUser) {
+            return res.status(404).json({
+                ok: false,
+                message: "Usuario no encontrado"
+            });
+        }
+
+        return res.status(200).json({
+            ok: true,
+            message: "Usuario eliminado correctamente"
+        });
+
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            ok: false,
+            message: "Error al eliminar usuario"
+        });
     }
 };
 
 module.exports = {
-    getUserById,
-    createUser,
-    updateUser,
     getAllUsers,
+    getUserById,
+    changeUserRole,
     deleteUser
 };
-
-
-
-
