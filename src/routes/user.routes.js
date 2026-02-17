@@ -1,46 +1,34 @@
 const express = require("express");
 const router = express.Router();
-
-// --- IMPORTACIONES DE CONTROLADORES ---
 const { 
-    getAllUsers, 
-    getUserById, 
-    deleteUser, 
-    changeUserRole 
+    updateUser,
+    getUserById,
+    toggleUserStatus,
+    deleteUser,
+    getAllUsers
 } = require("../controllers/user.controller");
 
-// --- IMPORTACIONES DE MIDDLEWARES (Validadores) ---
-const { 
-    validateUserId, 
-    validateUpdateRole 
-} = require("../middlewares/auth.validator");
+const { verifyAuth, verifyAdmin } = require("../middlewares/auth");
+const { validateMongoID, validateUpdateRole } = require("../middlewares/validator");
 
-// --- IMPORTACIÓN DE SEGURIDAD (JWT) ---
-// Este es el guardia que revisa si tienes el token
-const { authRequired } = require("../middlewares/validateToken");
+// Todas las rutas requieren autenticación y ser ADMIN
+router.use(verifyAuth, verifyAdmin); 
 
+// --- Rutas de Administración ---
 
-// ==========================================
-// RUTAS DE USUARIOS
-// Base URL: http://localhost:4000/api/users
-// ==========================================
+// Obtener todos
+router.get("/", getAllUsers);
 
-// 1. Leer todos los usuarios (Requiere Token)
-// URL Final: http://localhost:4000/api/v1/users
-router.get("/", authRequired, getAllUsers);
+// Obtener uno por ID
+router.get("/:id", validateMongoID, getUserById);
 
-// 2. Leer un usuario por ID (Requiere Token + ID válido)
-// URL Final: http://localhost:4000/api/v1/users/:id
-router.get("/:id", authRequired, validateUserId, getUserById);
+// Cambiar Rol
+router.put("/:id/role", validateMongoID, validateUpdateRole, updateUser);
 
-// 3. Eliminar un usuario por ID (Requiere Token + ID válido)
-// URL Final: http://localhost:4000/api/v1/users/:id
-router.delete("/:id", authRequired, validateUserId, deleteUser);
+// Suspender / Activar usuario (Requisito Hotel)
+router.patch("/:id/status", validateMongoID, toggleUserStatus);
 
-// 4. Cambiar el ROL de un usuario (Requiere Token + ID válido + Rol válido)
-// URL Final: http://localhost:4000/api/v1/users/:id/role
-// Se usa PATCH porque solo actualizamos una parte del usuario (el rol)
-router.patch("/:id/role", authRequired, validateUserId, validateUpdateRole, changeUserRole);
-
+// Eliminar usuario
+router.delete("/:id", validateMongoID, deleteUser);
 
 module.exports = router;

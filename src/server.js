@@ -1,36 +1,57 @@
-// src/server.js
 const express = require("express");
 const morgan = require("morgan");
 const cors = require("cors");
+const cookieParser = require("cookie-parser"); // Necesario para leer la cookie del token
+const path = require("path");
 require("dotenv").config();
 
-// --- IMPORTACIONES DE RUTAS ---
+// --- IMPORTACIONES ---
 const connectDB = require("./config/database");
+const createSuperAdmin = require("./utils/createSuperAdmin");
+const errorHandler = require("./middlewares/errorHandler"); // Importamos el manejador de errores
+
+// Rutas
 const authRoutes = require("./routes/auth.routes");
-const userRoutes = require("./routes/user.routes"); // <--- Importamos rutas de usuario
+const userRoutes = require("./routes/user.routes");
+const roomRoutes = require("./routes/room.routes");
+const bookingRoutes = require("./routes/booking.routes");
+
 
 const app = express();
 
 // --- CONEXIÓN A BASE DE DATOS ---
 connectDB();
 
-// --- MIDDLEWARES ---
+// Crear super admin al iniciar 
+createSuperAdmin();
+
+// --- MIDDLEWARES GLOBALES ---
 app.use(morgan("dev"));
-app.use(cors());
+app.use(cors({
+    origin: "http://localhost:5173", // Ajusta esto a la URL de tu frontend React
+    credentials: true // Permite el envío de cookies
+}));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // Para parsear formularios si fuera necesario
+app.use(cookieParser()); // Middleware para cookies
+
+// --- CARPETA ESTÁTICA ---
+// Esto servirá las fotos de las habitaciones (Rooms)
+app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // --- RUTAS (ENDPOINTS) ---
-// Aquí es donde definimos la "puerta de entrada"
-// Agregamos "/v1" para que coincida con lo que buscas en Postman
+app.use("/api/v1/auth", authRoutes);   
+app.use("/api/v1/users", userRoutes); 
+app.use("/api/v1/rooms", roomRoutes);
+app.use("/api/v1/bookings", bookingRoutes);
 
-app.use("/api/v1/auth", authRoutes);   // Quedará: http://localhost:4000/api/v1/auth/login
-app.use("/api/v1/users", userRoutes);  // Quedará: http://localhost:4000/api/v1/users
+// --- MANEJO DE ERRORES ---
+// Debe ir AL FINAL de todas las rutas
+app.use(errorHandler);
 
 // --- ARRANQUE DEL SERVIDOR ---
 const port = process.env.PORT || 4000;
 
 app.listen(port, () => {
-    console.log(`🏨 Servidor corriendo en http://localhost:${port}`);
-    console.log(`   - Auth:  http://localhost:${port}/api/v1/auth`);
-    console.log(`   - Users: http://localhost:${port}/api/v1/users`);
+    console.log(`🏨 Servidor Hotel corriendo en http://localhost:${port}`);
 });
