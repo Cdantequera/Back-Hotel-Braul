@@ -4,9 +4,6 @@ const router = express.Router();
 const { createPreference, handleWebhook } = require("../controllers/payment.controller");
 const { verifyAuth } = require("../middlewares/auth");
 
-// ─────────────────────────────────────────────
-// RUTAS DE PAGOS
-// ─────────────────────────────────────────────
 
 // Crear preferencia de pago (requiere usuario logueado)
 router.post("/create_preference", verifyAuth, createPreference);

@@ -5,11 +5,7 @@ const Booking = require("../models/Booking");
 const client = new MercadoPagoConfig({
     accessToken: process.env.MP_ACCESS_TOKEN,
 });
-console.log("TOKEN CARGADO:", process.env.MP_ACCESS_TOKEN ? "SÍ ✅" : "NO ❌");
 
-// ─────────────────────────────────────────────
-// 2. Crear Preferencia de Pago
-// ─────────────────────────────────────────────
 const createPreference = async (req, res, next) => {
     try {
         const { bookingId } = req.body;
@@ -72,10 +68,7 @@ const createPreference = async (req, res, next) => {
     }
 };
 
-// ─────────────────────────────────────────────
-// 3. Webhook — Mercado Pago notifica el resultado del pago
-//    Esta ruta NO lleva verifyAuth porque MP no envía token de usuario
-// ─────────────────────────────────────────────
+
 const handleWebhook = async (req, res) => {
     try {
         const { type, data } = req.body;
