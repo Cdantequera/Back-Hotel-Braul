@@ -16,6 +16,7 @@ const userRoutes = require("./routes/user.routes");
 const roomRoutes = require("./routes/room.routes");
 const bookingRoutes = require("./routes/booking.routes");
 const paymentRoutes = require("./routes/payment.routes");
+const configRoutes = require("./routes/config.routes");
 
 const app = express();
 
@@ -50,6 +51,7 @@ app.use("/api/v1/users", userRoutes);
 app.use("/api/v1/rooms", roomRoutes);
 app.use("/api/v1/bookings", bookingRoutes);
 app.use("/api/v1/payments", paymentRoutes);
+app.use("/api/v1/config", configRoutes);
 
 // --- MANEJO DE ERRORES ---
 app.use(errorHandler);
