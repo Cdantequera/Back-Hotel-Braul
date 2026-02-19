@@ -42,18 +42,12 @@ router.post("/google", googleLogin);
 router.post("/login", authLimiter, validateLogin, login);
 
 // Recuperación de Contraseña
-// Paso 1: Solicitar correo
 router.post("/forgot-password", authLimiter, validateForgotPassword, forgotPassword);
-
-// Paso 2: Enviar nueva contraseña con el token
 router.post("/reset-password/:token", authLimiter, validateResetPassword, resetPassword);
-
 
 // --- RUTAS PRIVADAS ---
 router.post("/logout", verifyAuth, logout);
 router.get("/profile", verifyAuth, getUserProfile);
-
-// Usamos tu misma función getUserProfile para que el frontend pueda verificar la sesión
 router.get("/me", verifyAuth, getUserProfile);
 
 module.exports = router;

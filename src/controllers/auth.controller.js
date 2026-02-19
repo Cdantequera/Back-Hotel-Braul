@@ -8,32 +8,34 @@ const generateToken = (id) => {
   return jwt.sign({id}, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
-// Registrarse
+// Registrarse (MODIFICADO PARA SALTAR EL EMAIL)
 const register = async (req, res, next) => {
   try {
     const { name, surname, email, password } = req.body;
-    const newUser = await User.create({ name, surname, email, password });
-
-    newUser.generateVerificationCode();
+    
+    // Creamos el usuario
+    const newUser = new User({ name, surname, email, password });
+    
+    // TRUCO: Lo marcamos como verificado automáticamente para que pueda hacer login directo
+    newUser.verifiedEmail = true; 
+    
     await newUser.save();
 
-    try {
-      await sendVerificationEmail(email, name, newUser.verificationCode);
-      return res.status(201).json({
-        ok: true,
-        message: "Usuario registrado. Verifica tu email.",
-        user: { id: newUser._id, name: newUser.name, email: newUser.email }
-      });
-    } catch (emailError) {
-      await User.findByIdAndDelete(newUser._id);
-      return res.status(500).json({ ok: false, message: "Error enviando email", error: emailError.message });
-    }
+    // COMENTAMOS EL ENVÍO DE EMAIL PARA QUE RENDER NO SE QUEDE COLGADO
+    // await sendVerificationEmail(email, name, newUser.verificationCode);
+    
+    return res.status(201).json({
+      ok: true,
+      message: "Usuario registrado con éxito. Ya puedes iniciar sesión.",
+      user: { id: newUser._id, name: newUser.name, email: newUser.email }
+    });
+    
   } catch (error) {
     next(error);
   }
 }
 
-// Verificar el mail
+// Verificar el mail (Lo dejamos por si acaso, pero ya no se usará obligatoriamente)
 const verifyEmail = async (req, res, next) => {
   try {
     const { email, code } = req.body;
@@ -96,7 +98,7 @@ const logout = async (req, res, next) => {
   }
 }
 
-// 
+// Obtener perfil
 const getUserProfile = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select("-password -verificationCode");
@@ -106,7 +108,7 @@ const getUserProfile = async (req, res, next) => {
   }
 }
 
-// cambiar la contraceña 
+// Cambiar contraseña (MODIFICADO PARA SALTAR EL EMAIL)
 const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -119,26 +121,25 @@ const forgotPassword = async (req, res, next) => {
     const token = user.createPasswordResetToken();
     await user.save({ validateBeforeSave: false });
 
-    // Ajusta el puerto si tu front no es 5173
-    const resetUrl = `http://localhost:5173/reset-password/${token}`;
+    // Ajustamos la URL dinámicamente según dónde esté el frontend
+    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const resetUrl = `${frontendUrl}/reset-password/${token}`;
 
-    try {
-      // Usamos la función importada (sendResetPasswordEmail) para enviar el correo
-      await sendResetPasswordEmail(user.email, user.name, resetUrl);
-      return res.status(200).json({ ok: true, message: "Correo enviado" });
-    } catch (err) {
-      user.resetPasswordToken = undefined;
-      user.resetPasswordExpires = undefined;
-      await user.save({ validateBeforeSave: false });
-      return res.status(500).json({ ok: false, message: "Error enviando correo" });
-    }
+    // COMENTAMOS EL EMAIL Y MOSTRAMOS EL LINK EN LA CONSOLA DE RENDER
+    // await sendResetPasswordEmail(user.email, user.name, resetUrl);
+    console.log("=========================================");
+    console.log("🔗 LINK PARA RECUPERAR CONTRASEÑA:");
+    console.log(resetUrl);
+    console.log("=========================================");
+
+    return res.status(200).json({ ok: true, message: "Correo 'enviado'. (Revisa la consola de Render para ver el link)" });
+    
   } catch (error) {
     next(error);
   }
 };
 
-// reseteamos la contraceña  
-
+// Reseteamos la contraseña  
 const resetPassword = async (req, res, next) => {
   try {
     const { token } = req.params;
@@ -162,40 +163,30 @@ const resetPassword = async (req, res, next) => {
   }
 }
 
-// controlador de inicio de sesion de google
-
-
+// Controlador de inicio de sesion de google
 const googleLogin = async (req, res, next) => {
   try {
     const { email, name, surname, googleId } = req.body;
 
-    // 1. Buscamos si el usuario ya existe en nuestra BD
     let user = await User.findOne({ email });
 
     if (!user) {
-      // 2. SI NO EXISTE: Lo creamos automáticamente (Auto-Register)
-      // Generamos una contraseña aleatoria segura
       const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8);
-      
       user = new User({
         name: name || "User",
         surname: surname || "Google",
         email: email,
-        password: randomPassword, // Se hasheará en el pre('save')
+        password: randomPassword, 
         role: "user",
         active: true,
-        verifiedEmail: true, // Google ya verificó el email
-        googleId: googleId   // Opcional: podrías agregar este campo a tu Schema si quieres
+        verifiedEmail: true, 
+        googleId: googleId   
       });
-
       await user.save();
     }
 
-    // 3. SI YA EXISTE (o acabamos de crearlo): Generamos el Token JWT propio del Hotel
-    // (Reutilizamos la lógica de tu login normal)
     const token = generateToken(user._id);
 
-    // 4. Enviamos la Cookie
     res.cookie("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -206,7 +197,7 @@ const googleLogin = async (req, res, next) => {
     return res.status(200).json({
       ok: true,
       message: "Login con Google exitoso",
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, photo: user.photo } // Agrega photo al Schema si quieres guardarla
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, photo: user.photo } 
     });
 
   } catch (error) {
@@ -217,21 +208,13 @@ const googleLogin = async (req, res, next) => {
 const getCurrentUser = async (req, res, next) => {
   try {
     const user = await User.findById(req.user.id).select('-password');
+    if (!user) return res.status(404).json({ ok: false, message: "Usuario no encontrado" });
 
-    if (!user) {
-      return next(errorHandler(404, 'Usuario no encontrado'));
-    }
-
-    res.status(200).json({
-      ok: true,
-      user,
-    });
+    res.status(200).json({ ok: true, user });
   } catch (error) {
     next(error);
   }
 };
-
-
 
 module.exports = {
     register,
