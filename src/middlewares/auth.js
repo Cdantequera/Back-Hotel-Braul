@@ -4,7 +4,15 @@ const User = require("../models/User");
 // Verificar si el usuario está autenticado
 const verifyAuth = async (req, res, next) => {
     try {
-        const token = req.cookies.token;
+        let token = req.cookies.token;
+
+        if (!token) {
+            const authHeader = req.headers.authorization;
+            if (authHeader && authHeader.startsWith('Bearer ')) {
+                token = authHeader.split(' ')[1];
+            }
+        }
+
         if (!token) {
             return res.status(401).json({
                 ok: false,

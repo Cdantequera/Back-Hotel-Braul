@@ -197,6 +197,7 @@ const googleLogin = async (req, res, next) => {
     return res.status(200).json({
       ok: true,
       message: "Login con Google exitoso",
+      token,
       user: { id: user._id, name: user.name, email: user.email, role: user.role, photo: user.photo }
     });
 
