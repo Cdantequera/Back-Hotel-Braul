@@ -4,8 +4,6 @@ const connectDB = async () => {
     try {
         // Conexión a la base de datos usando la variable de entorno del archivo .env
         await mongoose.connect(process.env.MONGO_URI, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true
         });
         console.log("🌎 Conectado a MongoDB exitosamente");
     } catch (error) {
