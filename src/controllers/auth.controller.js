@@ -1,35 +1,35 @@
 const User = require("../models/User");
-const crypto = require("crypto"); 
-const { sendVerificationEmail, sendResetPasswordEmail } = require("../utils/emailservice"); 
+const crypto = require("crypto");
+const { sendVerificationEmail, sendResetPasswordEmail } = require("../utils/emailservice");
 const jwt = require("jsonwebtoken");
 
 // Generar Token
 const generateToken = (id) => {
-  return jwt.sign({id}, process.env.JWT_SECRET, { expiresIn: "1h" });
+  return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: "1h" });
 };
 
 // Registrarse (MODIFICADO PARA SALTAR EL EMAIL)
 const register = async (req, res, next) => {
   try {
     const { name, surname, email, password } = req.body;
-    
+
     // Creamos el usuario
     const newUser = new User({ name, surname, email, password });
-    
+
     // TRUCO: Lo marcamos como verificado automáticamente para que pueda hacer login directo
-    newUser.verifiedEmail = true; 
-    
+    newUser.verifiedEmail = true;
+
     await newUser.save();
 
     // COMENTAMOS EL ENVÍO DE EMAIL PARA QUE RENDER NO SE QUEDE COLGADO
     // await sendVerificationEmail(email, name, newUser.verificationCode);
-    
+
     return res.status(201).json({
       ok: true,
       message: "Usuario registrado con éxito. Ya puedes iniciar sesión.",
       user: { id: newUser._id, name: newUser.name, email: newUser.email }
     });
-    
+
   } catch (error) {
     next(error);
   }
@@ -52,7 +52,7 @@ const verifyEmail = async (req, res, next) => {
     await user.save();
 
     return res.status(200).json({ ok: true, message: "Email verificado. Ya puedes iniciar sesión" });
- } catch (error) {
+  } catch (error) {
     next(error);
   }
 };
@@ -76,12 +76,12 @@ const login = async (req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000 
+      maxAge: 3600000
     });
-    
+
     return res.status(200).json({
-        ok: true, message: "Login Exitoso", token,
-        user: { id: user._id, name: user.name, email: user.email, role: user.role }
+      ok: true, message: "Login Exitoso", token,
+      user: { id: user._id, name: user.name, email: user.email, role: user.role }
     });
   } catch (error) {
     next(error);
@@ -122,7 +122,7 @@ const forgotPassword = async (req, res, next) => {
     await user.save({ validateBeforeSave: false });
 
     // Ajustamos la URL dinámicamente según dónde esté el frontend
-    const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173";
+    const frontendUrl = process.env.FRONTEND_URL || "https://hotel-braul.vercel.app";
     const resetUrl = `${frontendUrl}/reset-password/${token}`;
 
     // COMENTAMOS EL EMAIL Y MOSTRAMOS EL LINK EN LA CONSOLA DE RENDER
@@ -133,7 +133,7 @@ const forgotPassword = async (req, res, next) => {
     console.log("=========================================");
 
     return res.status(200).json({ ok: true, message: "Correo 'enviado'. (Revisa la consola de Render para ver el link)" });
-    
+
   } catch (error) {
     next(error);
   }
@@ -176,11 +176,11 @@ const googleLogin = async (req, res, next) => {
         name: name || "User",
         surname: surname || "Google",
         email: email,
-        password: randomPassword, 
+        password: randomPassword,
         role: "user",
         active: true,
-        verifiedEmail: true, 
-        googleId: googleId   
+        verifiedEmail: true,
+        googleId: googleId
       });
       await user.save();
     }
@@ -191,13 +191,13 @@ const googleLogin = async (req, res, next) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",
-      maxAge: 3600000 
+      maxAge: 3600000
     });
 
     return res.status(200).json({
       ok: true,
       message: "Login con Google exitoso",
-      user: { id: user._id, name: user.name, email: user.email, role: user.role, photo: user.photo } 
+      user: { id: user._id, name: user.name, email: user.email, role: user.role, photo: user.photo }
     });
 
   } catch (error) {
@@ -217,13 +217,13 @@ const getCurrentUser = async (req, res, next) => {
 };
 
 module.exports = {
-    register,
-    login,
-    logout,
-    getCurrentUser,
-    verifyEmail,
-    getUserProfile,
-    forgotPassword, 
-    resetPassword,
-    googleLogin   
+  register,
+  login,
+  logout,
+  getCurrentUser,
+  verifyEmail,
+  getUserProfile,
+  forgotPassword,
+  resetPassword,
+  googleLogin
 };
