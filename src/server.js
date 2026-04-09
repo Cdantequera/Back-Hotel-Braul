@@ -9,6 +9,11 @@ require("dotenv").config();
 const connectDB = require("./config/database");
 const createSuperAdmin = require("./utils/createSuperAdmin");
 const errorHandler = require("./middlewares/errorHandler");
+const allowedOrigins = [
+  'https://hotel-braul.vercel.app',
+  'http://localhost:5173',      // Vite por defecto
+  'http://localhost:3000'       // Por si usas otro puerto
+];
 
 // Rutas
 const authRoutes = require("./routes/auth.routes");
@@ -34,9 +39,17 @@ app.use(morgan("dev"));
 
 // ¡CORS DINÁMICO REPARADO PARA VERCEL!
 app.use(cors({
-    origin: process.env.FRONTEND_URL || "https://hotel-braul.vercel.app",
-    credentials: true
-}));
+  origin: function (origin, callback) {
+    // Permitir solicitudes sin origen (como Postman o apps móviles)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Bloqueado por CORS'));
+    }
+  },
+  credentials: true
+}))
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
