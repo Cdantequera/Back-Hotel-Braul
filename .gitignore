@@ -1,2 +1,66 @@
+# Variables de Entorno
 .env
-node_modules
+.env.local
+.env.*.local
+
+# Dependencias
+node_modules/
+package-lock.json
+yarn.lock
+
+# Archivos de Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# IDE y Editores
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.sublime-workspace
+*.sublime-project
+
+# Archivos de Log
+*.log
+npm-debug.log*
+npm-error.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+logs/
+
+# Archivos Subidos
+uploads/
+uploads/rooms/*
+
+# Archivos Temporales
+tmp/
+temp/
+*.tmp
+
+# Compilación
+dist/
+build/
+
+# Testing
+.nyc_output/
+coverage/
+test-results/
+
+# Caché
+.cache/
+.parcel-cache/
+
+# Otros
+.vscode-test
+out/

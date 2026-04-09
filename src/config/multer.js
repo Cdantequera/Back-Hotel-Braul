@@ -1,40 +1,37 @@
-const multer = require("multer");
-const path = require("path");
+const multer = require('multer');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('./cloudinary');
 
-// Configuración del almacenamiento
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        // Define la carpeta destino: uploads/rooms
-        cb(null, path.join(__dirname, "../../uploads/rooms"));
-    },
-    filename: function (req, file, cb) {
-        // Genera un nombre único: timestamp + extensión
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, "room-" + uniqueSuffix + path.extname(file.originalname));
-    }
+// Configurar almacenamiento en Cloudinary
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: 'hotel-braul/rooms',        // Carpeta organizada en Cloudinary
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 800, crop: 'limit' }] // Redimensiona automáticamente
+  }
 });
 
-// Filtro de archivos (Solo imágenes)
+// Filtro de archivos (solo imágenes)
 const fileFilter = (req, file, cb) => {
-    const fileTypes = /jpeg|jpg|png|webp/;
-    const mimetype = fileTypes.test(file.mimetype);
-    const extname = fileTypes.test(path.extname(file.originalname).toLowerCase());
+  const fileTypes = /jpeg|jpg|png|webp/;
+  const mimetype = fileTypes.test(file.mimetype);
+  const extname = fileTypes.test(file.originalname.split('.').pop().toLowerCase());
 
-    if (mimetype && extname) {
-        return cb(null, true);
-    }
-    cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, webp)"));
+  if (mimetype && extname) {
+    return cb(null, true);
+  }
+  cb(new Error("Solo se permiten imágenes (jpeg, jpg, png, webp)"));
 };
 
-// Configuración final de Multer
+// Configuración final de Multer con Cloudinary
 const upload = multer({
-    storage: storage,
-    limits: { fileSize: 5 * 1024 * 1024 }, // Límite de 5MB
-    fileFilter: fileFilter
+  storage: storage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: fileFilter
 });
 
-// Exportamos el middleware específico para habitaciones
-// 'imagen' es el nombre del campo que debe enviar el Frontend (FormData)
+// Middleware específico para habitaciones
 const uploadRoom = upload.single("image");
 
 module.exports = { uploadRoom };
