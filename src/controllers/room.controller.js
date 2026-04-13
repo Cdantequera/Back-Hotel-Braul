@@ -132,6 +132,19 @@ const deleteRoom = async (req, res, next) => {
         const room = await Room.findById(id);
         if (!room) return res.status(404).json({ ok: false, message: "No encontrada" });
 
+        // Verificamos si la habitación tiene reservas activas (pendientes o confirmadas)
+        const activeBooking = await Booking.findOne({
+            room: id,
+            status: { $in: ['pending', 'confirmed'] }
+        });
+
+        if (activeBooking) {
+            return res.status(400).json({
+                ok: false,
+                message: "No se puede eliminar porque hay clientes con reservas activas o pendientes para esta habitación."
+            });
+        }
+
         // Eliminar imagen de Cloudinary si existe
         if (room.image) {
             const publicId = extractPublicIdFromUrl(room.image);

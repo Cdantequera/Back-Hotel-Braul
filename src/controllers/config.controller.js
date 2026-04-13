@@ -1,15 +1,22 @@
 const SiteConfig = require('../models/SiteConfig');
 
-// GET /api/v1/config
-// Público - Footer y Contact lo usan sin autenticación
+// GET /api/v1/config - Público
 const getConfig = async (req, res, next) => {
     try {
-        // findOne sin filtro devuelve el único documento, o null si no existe aún
+        // Buscar el documento singleton
         let config = await SiteConfig.findOne({ singleton: true });
 
-        // Si no existe todavía, creamos uno vacío con defaults
+        // Si no existe, crearlo con valores por defecto seguros
         if (!config) {
-            config = await SiteConfig.create({ singleton: true });
+            config = await SiteConfig.create({
+                singleton: true,
+                phone: '',
+                whatsapp: '',
+                email: '',
+                instagram: '',
+                facebook: '',
+                twitter: ''
+            });
         }
 
         res.status(200).json({ ok: true, config });
@@ -18,17 +25,20 @@ const getConfig = async (req, res, next) => {
     }
 };
 
-// PUT /api/v1/config
-// Solo Admin
+// PUT /api/v1/config - Solo Admin
 const updateConfig = async (req, res, next) => {
     try {
         const { phone, whatsapp, email, instagram, facebook, twitter } = req.body;
 
-        // findOneAndUpdate con upsert:true crea el documento si no existe
         const config = await SiteConfig.findOneAndUpdate(
             { singleton: true },
             { phone, whatsapp, email, instagram, facebook, twitter },
-            { new: true, upsert: true, runValidators: true }
+            { 
+                new: true, 
+                upsert: true, 
+                setDefaultsOnInsert: true, // Aplica defaults del esquema al insertar
+                runValidators: true 
+            }
         );
 
         res.status(200).json({ ok: true, message: 'Configuración actualizada', config });
