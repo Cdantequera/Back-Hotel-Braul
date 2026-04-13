@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const { createMessage, getMessages, markAsRead, deleteMessage } = require('../controllers/contact.controller');
-const { verifyToken, isAdmin } = require('../middlewares/auth.middleware');
+const { verifyAuth, verifyAdmin } = require('../middlewares/auth');
 
 // Configuración del Rate Limit para detener Spam (Peticiones POST a contacto)
 const contactLimiter = rateLimit({
@@ -18,8 +18,8 @@ const contactLimiter = rateLimit({
 router.post('/', contactLimiter, createMessage);
 
 // Rutas Privadas (Admin)
-router.get('/', verifyToken, isAdmin, getMessages);
-router.patch('/:id/read', verifyToken, isAdmin, markAsRead);
-router.delete('/:id', verifyToken, isAdmin, deleteMessage);
+router.get('/', verifyAuth, verifyAdmin, getMessages);
+router.patch('/:id/read', verifyAuth, verifyAdmin, markAsRead);
+router.delete('/:id', verifyAuth, verifyAdmin, deleteMessage);
 
 module.exports = router;
